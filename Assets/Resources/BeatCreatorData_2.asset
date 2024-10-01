@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eb04c85ce02504a488a2607179504cb4, type: 3}
+  m_Name: BeatCreatorData_2
+  m_EditorClassIdentifier: 
+  clip: {fileID: 8300000, guid: ee7ee9c0b4ede5e41ad9d78ddfd870cd, type: 3}
+  switchDirections:
+  - 28
+  - 53
+  - 81
+  - 107
+  - 134
+  - 158
+  beats: []
