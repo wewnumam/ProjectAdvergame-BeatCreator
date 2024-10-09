@@ -1,5 +1,6 @@
 using NaughtyAttributes;
 using ProjectAdvergame.Utility;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -9,7 +10,7 @@ public class SO_BeatCreatorData : ScriptableObject
 {
     public AudioClip clip;
     public List<float> switchDirections;
-    public List<Beat> beats;
+    public BeatListWrapper beatListWrapper;
 }
 
 [System.Serializable]
@@ -20,4 +21,10 @@ public class Beat
     public EnumManager.StoneType type;
     [Foldout("Details")]
     public EnumManager.Direction direction;
+}
+
+[Serializable]
+public class BeatListWrapper
+{
+    public List<Beat> beats;
 }

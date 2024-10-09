@@ -24,9 +24,9 @@ public class BeatCreator : MonoBehaviour
     [SerializeField] SO_BeatCreatorData beatCreatorData;
     [SerializeField] Transform beatsParent;
     [SerializeField] GameObject beatPrefab;
-    [SerializeField] TMP_Text clipboardText;
-
-    private StringBuilder clipboard;
+    [SerializeField] TMP_InputField clipboardText;
+    [SerializeField] SpectrumMover spectrumMover;
+    [SerializeField] TMP_Text debugText;
 
     private void Update()
     {
@@ -55,11 +55,8 @@ public class BeatCreator : MonoBehaviour
         this.beatCreatorData = beatCreatorData;
         currentDirection = EnumManager.Direction.FromEast;
         audioSource.clip = beatCreatorData.clip;
-        if (clipboard != null)
-            clipboard.Clear();
-        clipboard = new StringBuilder();
 
-        if (beatCreatorData.beats.Count > 0)
+        if (beatCreatorData.beatListWrapper.beats.Count > 0)
         {
             if (beatObjs.Count > 0)
                 foreach (var beatObj in beatObjs)
@@ -67,27 +64,26 @@ public class BeatCreator : MonoBehaviour
             
             beatObjs = new List<GameObject>();
 
-            for (int i = 0; i < beatCreatorData.beats.Count; i++)
+            for (int i = 0; i < beatCreatorData.beatListWrapper.beats.Count; i++)
             {
-                Beat beat = beatCreatorData.beats[i];
+                Beat beat = beatCreatorData.beatListWrapper.beats[i];
                 GameObject obj = Instantiate(beatPrefab, new Vector3(beat.direction == EnumManager.Direction.FromEast ? beat.interval : -beat.interval, 0, 0), Quaternion.identity, beatsParent);
 
                 if (beat.type == EnumManager.StoneType.LongBeat)
                 {
-                    if (i < beatCreatorData.beats.Count - 1)
+                    if (i < beatCreatorData.beatListWrapper.beats.Count - 1)
                     {
                         Vector3 modScale = obj.transform.localScale;
-                        modScale.x = beat.interval - beatCreatorData.beats[i + 1].interval;
+                        modScale.x = beat.interval - beatCreatorData.beatListWrapper.beats[i + 1].interval;
                         obj.transform.localScale = modScale;
                     }
                 }
                 
                 beatObjs.Add(obj);
-                clipboard.Insert(0, $"{beat.interval:F2}\n");
             }
         }
 
-        clipboardText?.SetText(clipboard.ToString());
+        clipboardText.text = JsonUtility.ToJson(beatCreatorData.beatListWrapper, true);
     }
 
 
@@ -100,20 +96,21 @@ public class BeatCreator : MonoBehaviour
         beat.type = stoneType;
         beat.interval = currentTime;
         beat.direction = currentDirection;
-        beatCreatorData.beats.Add(beat);
-        clipboard.Insert(0, $"{currentTime:F2}\n");
-        clipboardText?.SetText(clipboard.ToString());
+        beatCreatorData.beatListWrapper.beats.Add(beat);
+        debugText?.SetText(currentTime.ToString());
     }
 
     public void Record()
     {
-        beatCreatorData.beats = new List<Beat>();
+        beatCreatorData.beatListWrapper.beats = new List<Beat>();
         isPlay = true;
+        spectrumMover.Play(audioSource.clip.length);
         audioSource.Play();
     }
 
     public void StopRecord()
     {
+        spectrumMover.Stop();
         audioSource.Stop();
         isPlay = false;
         currentTime = 0;
@@ -128,11 +125,12 @@ public class BeatCreator : MonoBehaviour
 
     public void Playback()
     {
+        spectrumMover.Play(audioSource.clip.length);
         isPlay = true;
         for (int i = 0; i < beatObjs.Count; i++)
         {
             int index = i;  // Capture the current value of i
-            beatObjs[index].transform.DOMoveX(beatObjs[index].transform.position.x > 0 ? -beatObjs[index].transform.localScale.x / 2 : beatObjs[index].transform.localScale.x / 2, beatCreatorData.beats[index].interval)
+            beatObjs[index].transform.DOMoveX(beatObjs[index].transform.position.x > 0 ? -beatObjs[index].transform.localScale.x / 2 : beatObjs[index].transform.localScale.x / 2, beatCreatorData.beatListWrapper.beats[index].interval)
                 .SetEase(Ease.Linear)
                 .OnComplete(() => beatObjs[index].SetActive(false));
         }
@@ -141,8 +139,42 @@ public class BeatCreator : MonoBehaviour
 
     public void CopyClipBoard()
     {
-        string yamlContent = JsonUtility.ToJson(beatCreatorData, true);
+        string yamlContent = JsonUtility.ToJson(beatCreatorData.beatListWrapper, true);
         GUIUtility.systemCopyBuffer = yamlContent;
         Debug.Log(yamlContent);
+    }
+
+    public void OverwriteBeatsFromInput()
+    {
+        if (string.IsNullOrEmpty(clipboardText.text))
+        {
+            debugText?.SetText("Input field is empty.");
+            return;
+        }
+
+        try
+        {
+            // Deserialize the JSON into a temporary class for the beats field
+            BeatListWrapper newBeatsData = JsonUtility.FromJson<BeatListWrapper>(clipboardText.text);
+
+            if (newBeatsData != null && newBeatsData.beats != null)
+            {
+                // Overwrite the beats field in beatCreatorData
+                beatCreatorData.beatListWrapper = newBeatsData;
+
+                // Re-apply the updated beatCreatorData
+                SetBeatCreatorData(beatCreatorData);
+
+                debugText?.SetText("Beats have been successfully overwritten from input field.");
+            }
+            else
+            {
+                debugText?.SetText("Failed to parse input field JSON for beats.");
+            }
+        }
+        catch (Exception ex)
+        {
+            debugText?.SetText($"Error parsing input field JSON: {ex.Message}");
+        }
     }
 }
