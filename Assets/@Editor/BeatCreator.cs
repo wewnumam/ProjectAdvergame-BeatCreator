@@ -102,6 +102,7 @@ public class BeatCreator : MonoBehaviour
 
     public void Record()
     {
+        Time.timeScale = 1;
         beatCreatorData.beatListWrapper.beats = new List<Beat>();
         isPlay = true;
         spectrumMover.Play(audioSource.clip.length);
@@ -110,6 +111,7 @@ public class BeatCreator : MonoBehaviour
 
     public void StopRecord()
     {
+        Time.timeScale = 1;
         spectrumMover.Stop();
         audioSource.Stop();
         isPlay = false;
@@ -125,6 +127,7 @@ public class BeatCreator : MonoBehaviour
 
     public void Playback()
     {
+        Time.timeScale = 1;
         spectrumMover.Play(audioSource.clip.length);
         isPlay = true;
         for (int i = 0; i < beatObjs.Count; i++)
@@ -176,5 +179,15 @@ public class BeatCreator : MonoBehaviour
         {
             debugText?.SetText($"Error parsing input field JSON: {ex.Message}");
         }
+    }
+
+    public void Pause()
+    {
+        if (audioSource.isPlaying)
+            audioSource.Pause();
+        else
+            audioSource.Play();
+
+        Time.timeScale = Time.timeScale > 0 ? 0 : 1;
     }
 }
